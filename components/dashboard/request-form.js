@@ -125,7 +125,9 @@ export function RequestForm() {
       router.push("/requests");
     },
     onError: (err) => {
-      setError(err?.response?.data?.message || err?.message || t("requestsPage.saveError"));
+      const errors = err?.response?.data?.errors;
+      const firstError = errors ? Object.values(errors)[0]?.[0] : null;
+      setError(firstError || err?.response?.data?.message || err?.message || t("requestsPage.saveError"));
     },
   });
 

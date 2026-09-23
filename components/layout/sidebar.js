@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeftRight, ChevronsLeft, ChevronsRight, ClipboardList, LogOut, Package, UserRound, X } from "lucide-react";
+import { ArrowLeftRight, ChevronsLeft, ChevronsRight, ClipboardList, FileText, LogOut, Package, Receipt, UserRound, Users, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { clearToken } from "@/lib/auth";
@@ -22,6 +22,9 @@ const NAV_ITEMS = [
   { href: "/", labelKey: "portal.navStock", icon: Package },
   { href: "/movements", labelKey: "portal.navMovements", icon: ArrowLeftRight },
   { href: "/requests", labelKey: "portal.navRequests", icon: ClipboardList },
+  { href: "/traders", labelKey: "portal.navTraders", icon: Users },
+  { href: "/sales", labelKey: "portal.navSales", icon: Receipt },
+  { href: "/invoices", labelKey: "portal.navInvoices", icon: FileText },
 ];
 
 export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobile }) {
