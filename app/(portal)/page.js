@@ -1,7 +1,7 @@
 "use client";
 
-import { StockTable } from "@/components/dashboard/stock-table";
+import { DashboardHome } from "@/components/dashboard/dashboard-home";
 
-export default function StockPage() {
-  return <StockTable />;
+export default function HomePage() {
+  return <DashboardHome />;
 }

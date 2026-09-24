@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowRight, FileText, Pencil, Plus, Printer } from "lucide-react";
+import { ArrowRight, FileText, Pencil, Plus, Printer, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/hooks/use-locale";
 import { useAuthUser } from "@/hooks/use-auth-user";
@@ -14,6 +14,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 function directionLabel(t, direction) {
@@ -42,6 +43,8 @@ export function TraderDetail() {
   const [payError, setPayError] = useState("");
   const [showPayForm, setShowPayForm] = useState(false);
   const [editError, setEditError] = useState("");
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const query = useQuery({
     queryKey: ["distributor", "traders", id],
@@ -83,6 +86,27 @@ export function TraderDetail() {
       const errors = err?.response?.data?.errors;
       const firstError = errors ? Object.values(errors)[0]?.[0] : null;
       setEditError(firstError || err?.response?.data?.message || err?.message || t("tradersPage.saveError"));
+    },
+  });
+
+  // `confirm=1` is always sent after the user accepted the dialog; the API
+  // itself refuses to delete a trader that has history without it.
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.delete(`/distributor/traders/${id}`, { params: { confirm: 1 } });
+      if (data?.success === false) throw new Error(data?.message);
+    },
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ["distributor", "traders", id] });
+      for (const key of ["traders", "traders-active", "sales", "invoices", "dashboard"]) {
+        queryClient.invalidateQueries({ queryKey: ["distributor", key] });
+      }
+      router.push("/traders");
+    },
+    onError: (err) => {
+      const errors = err?.response?.data?.errors;
+      const firstError = errors && typeof errors === "object" ? Object.values(errors).find((v) => typeof v === "string" || Array.isArray(v)) : null;
+      setDeleteError((Array.isArray(firstError) ? firstError[0] : firstError) || err?.response?.data?.message || err?.message || t("traderDetailPage.deleteError"));
     },
   });
 
@@ -138,8 +162,43 @@ export function TraderDetail() {
   const transactions = Array.isArray(trader.b2b_transactions) ? trader.b2b_transactions : [];
   const invoices = Array.isArray(trader.invoices) ? trader.invoices : [];
 
+  const approvedCount = transactions.filter((tr) => tr.status === "approved").length;
+  const draftCount = transactions.filter((tr) => tr.status === "draft").length;
+  const remainingBalance = Number(ledger?.total_amount ?? 0) - Number(ledger?.amount_paid ?? 0);
+  const hasRecords = transactions.length > 0 || invoices.length > 0 || payments.length > 0;
+
+  const deleteMessage = hasRecords ? (
+    <div className="space-y-3 text-start">
+      <p className="font-semibold text-hadidi-primary">{t("traderDetailPage.deleteHasRecords", { name: trader.name })}</p>
+      <ul className="list-disc space-y-1 ps-5">
+        {approvedCount > 0 ? <li>{t("traderDetailPage.deleteApproved", { count: approvedCount })}</li> : null}
+        {invoices.length > 0 ? <li>{t("traderDetailPage.deleteInvoices", { count: invoices.length })}</li> : null}
+        {payments.length > 0 ? <li>{t("traderDetailPage.deletePayments", { count: payments.length })}</li> : null}
+        {draftCount > 0 ? <li>{t("traderDetailPage.deleteDrafts", { count: draftCount })}</li> : null}
+        {remainingBalance > 0.009 ? (
+          <li className="font-semibold text-red-700">{t("traderDetailPage.deleteBalance", { amount: formatAmount(remainingBalance, locale) })}</li>
+        ) : null}
+      </ul>
+      <p>{t("traderDetailPage.deleteKeepsRecords")}</p>
+      <p className="font-semibold text-hadidi-primary">{t("traderDetailPage.deleteAsk")}</p>
+    </div>
+  ) : (
+    t("traderDetailPage.deleteSimple", { name: trader.name })
+  );
+
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={showDelete}
+        title={t("traderDetailPage.deleteTitle")}
+        message={deleteMessage}
+        confirmLabel={deleteMutation.isPending ? t("common.loading") : t("traderDetailPage.deleteConfirm")}
+        cancelLabel={t("common.cancel")}
+        pending={deleteMutation.isPending}
+        error={deleteError}
+        onConfirm={() => deleteMutation.mutate()}
+        onCancel={() => setShowDelete(false)}
+      />
       <Card>
         <CardHeader
           title={trader.name}
@@ -160,6 +219,17 @@ export function TraderDetail() {
                   {t("common.edit")}
                 </Button>
               ) : null}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setDeleteError("");
+                  setShowDelete(true);
+                }}
+                className="inline-flex items-center gap-2 text-red-700"
+              >
+                <Trash2 className="size-4 shrink-0" aria-hidden />
+                {t("common.delete")}
+              </Button>
               <Button variant="outline" onClick={() => router.push("/traders")} className="inline-flex items-center gap-2">
                 <ArrowRight className="size-4 shrink-0" aria-hidden />
                 {t("traderDetailPage.backBtn")}

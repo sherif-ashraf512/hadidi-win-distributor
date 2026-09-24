@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeftRight, ChevronsLeft, ChevronsRight, ClipboardList, FileText, LogOut, Package, Receipt, UserRound, Users, X } from "lucide-react";
+import { ArrowLeftRight, ChevronsLeft, ChevronsRight, ClipboardList, FileText, LayoutDashboard, LogOut, Package, Receipt, UserRound, Users, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { clearToken } from "@/lib/auth";
@@ -19,7 +19,8 @@ import { BrandLogoFull, BrandLogoMark } from "@/components/brand/brand-media";
  * it doesn't need a permanent nav slot.
  */
 const NAV_ITEMS = [
-  { href: "/", labelKey: "portal.navStock", icon: Package },
+  { href: "/", labelKey: "portal.navDashboard", icon: LayoutDashboard },
+  { href: "/stock", labelKey: "portal.navStock", icon: Package },
   { href: "/movements", labelKey: "portal.navMovements", icon: ArrowLeftRight },
   { href: "/requests", labelKey: "portal.navRequests", icon: ClipboardList },
   { href: "/traders", labelKey: "portal.navTraders", icon: Users },
