@@ -163,7 +163,7 @@ function SaleFormInner({ isEditMode, editId, initialSale }) {
         const rows = Array.isArray(data?.data?.items) ? data.data.items : [];
         return rows.map((row) => ({ id: row.inventory_item_id, item: row.item, available: row.quantity }));
       }
-      const { data } = await api.get("/distributor/stock", { params: { per_page: 100 } });
+      const { data } = await api.get("/distributor/stock", { params: { per_page: -1 } });
       const rows = Array.isArray(data?.data?.stocks) ? data.data.stocks : [];
       return rows.map((s) => ({ id: s.inventory_item_id, item: s.item, available: s.quantity }));
     },
